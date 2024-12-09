@@ -75,25 +75,24 @@ jobs:
         id: create_appimage
         run: |
           # Get appimagetool 
-          wget -c https://github.com/$(wget -q https://github.com/probonopd/go-appimage/releases/expanded_assets/continuous -O - | grep "appimagetool-.*-x86_64.AppImage" | head -n 1 | cut -d '"' -f 2)
+          wget -c https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
           #wget https://welle-io-nightlies.albrechtloh.de/appimagetool-843-x86_64.AppImage # just for testing
           chmod +x appimagetool-*.AppImage
 
-          # Get lib4bin (sharun)
-          wget https://raw.githubusercontent.com/VHSgunzo/sharun/refs/heads/main/lib4bin -O ./lib4bin
-          chmod +x ./lib4bin
-
-          # Collect remaining libraries
-          ./appimagetool-*.AppImage -s deploy ./appdir/usr/share/applications/*.desktop # Bundle EVERYTHING
-
-          # Dummy run welle in a virtual display to collect graphic libraries with sharun
-          xvfb-run -- ./lib4bin -p -v -r -e ./appdir/usr/bin/welle-io
-          cp shared/lib/l* appdir/usr/lib/x86_64-linux-gnu/
+          mv ./appdir/usr ./appdir/shared
+          ln -s ./shared ./appdir/usr
+          ( cd ./appdir
+            # Get lib4bin (sharun)
+            wget https://raw.githubusercontent.com/VHSgunzo/sharun/refs/heads/main/lib4bin -O ./lib4bin
+            chmod +x ./lib4bin
+            # Dummy run welle in a virtual display to collect graphic libraries with sharun
+            xvfb-run -- ./lib4bin -p -v -r -s -e -k ./shared/bin/welle-io
+          )
 
           find appdir/
 
           # Create AppImage
-          VERSION=1.0 ./appimagetool-*.AppImage ./appdir # turn AppDir into AppImage
+          ./appimagetool-*.AppImage -n ./appdir # turn AppDir into AppImage
 
           # Preapre publish
           mkdir publish
