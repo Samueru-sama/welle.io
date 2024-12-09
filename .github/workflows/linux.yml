@@ -76,10 +76,13 @@ jobs:
       - name: Create AppImage
         id: create_appimage
         run: |
+          ARCH="$(uname -m)"
+          UPINFO="gh-releases-zsync|$(echo "$GITHUB_REPOSITORY" | tr '/' '|')|latest|*$ARCH.AppImage.zsync"
+
           # Get appimagetool 
-          wget -c https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
+          wget -c "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-$ARCH.AppImage" -O ./appimagetool
           #wget https://welle-io-nightlies.albrechtloh.de/appimagetool-843-x86_64.AppImage # just for testing
-          chmod +x appimagetool-*.AppImage
+          chmod +x appimagetool
 
           mv ./appdir/usr ./appdir/shared
           ln -s ./shared ./appdir/usr
@@ -96,18 +99,20 @@ jobs:
           find appdir/
 
           # Create AppImage
-          ./appimagetool-*.AppImage -n ./appdir # turn AppDir into AppImage
+          ./appimagetool --comp zstd \
+            --mksquashfs-opt -Xcompression-level --mksquashfs-opt 22 \
+            -n -u "$UPINFO" "$PWD"/appdir "$PWD"/"$DATE"_"$GIT_HASH"_Linux_welle-io-x86_64.AppImage
 
           # Preapre publish
           mkdir publish
-          mv welle.io-1.0-x86_64.AppImage publish/"$DATE"_"$GIT_HASH"_Linux_welle-io-x86_64.AppImage
+          mv *.AppImage* publish/
         
       - name: Archive artifacts (welle.io AppImage)
         if: always() && steps.create_appimage.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: welle.io AppImage
-          path: publish/*welle-io-x86_64.AppImage
+          path: publish/*welle-io-x86_64.AppImage*
           if-no-files-found: error
 
       - name: Upload to nightly server
