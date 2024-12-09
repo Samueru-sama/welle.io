@@ -83,7 +83,8 @@ jobs:
           wget -c "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-$ARCH.AppImage" -O ./appimagetool
           #wget https://welle-io-nightlies.albrechtloh.de/appimagetool-843-x86_64.AppImage # just for testing
           chmod +x appimagetool
-          ln -s ./usr ./appdir/shared
+          mv ./appdir/usr ./appdir/shared
+          ln -s ./shared ./appdir/usr
 
           ( cd ./appdir
             # Get lib4bin (sharun)
